@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Smart City AI Risk Dashboard</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<style>
+
+/* ===== BODY ===== */
+body{
+margin:0;
+font-family:Arial;
+background:#0f2027;
+color:white;
+text-align:center;
+overflow:hidden;
+}
+
+/* ===== WEATHER EFFECTS ===== */
+#rainEffect, #fogEffect{
+position:fixed;
+width:100%;
+height:100%;
+top:0;
+left:0;
+pointer-events:none;
+z-index:0;
+display:none;
+}
+
+/* Rain */
+.raindrop{
+position:absolute;
+width:2px;
+height:15px;
+background:rgba(255,255,255,0.6);
+animation:fall linear infinite;
+}
+
+@keyframes fall{
+0%{transform:translateY(-100px);}
+100%{transform:translateY(100vh);}
+}
+
+/* Fog */
+#fogEffect{
+background:radial-gradient(circle, rgba(255,255,255,0.2) 0%, transparent 70%);
+animation:fogMove 20s linear infinite;
+}
+
+@keyframes fogMove{
+0%{transform:translateX(0);}
+100%{transform:translateX(-50%);}
+}
+
+/* Lightning */
+.lightning{
+position:fixed;
+top:0;
+left:0;
+width:100%;
+height:100%;
+background:white;
+opacity:0;
+pointer-events:none;
+z-index:5;
+}
+
+.flash{
+animation:flashEffect 0.3s ease;
+}
+
+@keyframes flashEffect{
+0%{opacity:0;}
+50%{opacity:0.8;}
+100%{opacity:0;}
+}
+
+/* Headlights */
+.headlight{
+position:fixed;
+bottom:60px;
+left:50%;
+width:300px;
+height:200px;
+background:radial-gradient(circle, rgba(255,255,200,0.4) 0%, transparent 70%);
+transform:translateX(-50%);
+display:none;
+pointer-events:none;
+z-index:1;
+}
+
+/* Container */
+.container{
+width:90%;
+max-width:450px;
+margin:40px auto;
+padding:25px;
+background:rgba(0,0,0,0.75);
+border-radius:20px;
+box-shadow:0 0 25px rgba(0,255,255,0.4);
+position:relative;
+z-index:2;
+}
+
+/* Moving Car */
+.car{
+position:fixed;
+bottom:20px;
+left:-150px;
+font-size:50px;
+animation:drive 8s linear infinite;
+z-index:1;
+}
+
+@keyframes drive{
+0%{left:-150px;}
+100%{left:110%;}
+}
+
+/* Options */
+.option-group{
+display:flex;
+gap:10px;
+margin-top:10px;
+flex-wrap:wrap;
+}
+
+.option{
+flex:1;
+padding:12px;
+border-radius:12px;
+background:rgba(255,255,255,0.1);
+cursor:pointer;
+transition:0.3s;
+font-weight:bold;
+}
+
+.option:hover{
+transform:scale(1.05);
+box-shadow:0 0 15px cyan;
+}
+
+.option.active{
+background:linear-gradient(90deg,#00f2ff,#ff00ff);
+box-shadow:0 0 20px #00f2ff;
+}
+
+input, select, button{
+width:100%;
+padding:12px;
+margin-top:12px;
+border-radius:10px;
+border:none;
+}
+
+button{
+background:linear-gradient(90deg,#00f2ff,#ff00ff);
+color:white;
+font-weight:bold;
+cursor:pointer;
+}
+
+/* Traffic Light */
+#trafficLight{
+margin:30px auto;
+width:120px;
+background:#111;
+padding:25px;
+border-radius:25px;
+}
+
+.light{
+width:70px;
+height:70px;
+margin:15px auto;
+border-radius:50%;
+background:#333;
+transition:0.4s;
+}
+
+.red.active{background:red; box-shadow:0 0 40px red;}
+.yellow.active{background:yellow; box-shadow:0 0 40px yellow;}
+.green.active{background:#00ff00; box-shadow:0 0 40px #00ff00;}
+
+#result{
+margin-top:20px;
+font-size:18px;
+font-weight:bold;
+}
+
+</style>
+</head>
+
+<body>
+
+<!-- Effects -->
+<div id="rainEffect"></div>
+<div id="fogEffect"></div>
+<div class="lightning" id="lightning"></div>
+<div class="headlight" id="headlight"></div>
+
+<audio id="thunderSound" src="https://www.soundjay.com/nature/sounds/thunder-02.mp3"></audio>
+
+<div class="car">🚗</div>
+
+<h1>AI Risk Dashboard</h1>
+
+<div class="container">
+
+<h3>Select Weather</h3>
+<div class="option-group">
+<div class="option" onclick="selectOption(this,'weather')">☀ Clear</div>
+<div class="option" onclick="selectOption(this,'weather')">🌧 Rain</div>
+<div class="option" onclick="selectOption(this,'weather')">🌫 Fog</div>
+</div>
+
+<h3>Select Road Type</h3>
+<div class="option-group">
+<div class="option" onclick="selectOption(this,'roadType')">🛣 Highway</div>
+<div class="option" onclick="selectOption(this,'roadType')">🏙 City</div>
+<div class="option" onclick="selectOption(this,'roadType')">🌾 Rural</div>
+</div>
+
+<input type="hidden" id="weather">
+<input type="hidden" id="roadType">
+
+<input type="number" id="speed" placeholder="Enter Speed">
+
+<select id="time">
+<option>Day</option>
+<option>Night</option>
+</select>
+
+<button onclick="predict()">Predict Risk</button>
+
+<div id="trafficLight">
+<div class="light red"></div>
+<div class="light yellow"></div>
+<div class="light green"></div>
+</div>
+
+<div id="result"></div>
+
+</div>
+
+<script>
+
+let thunderInterval;
+
+/* Weather Selection */
+function selectOption(element,type){
+
+let group = element.parentElement;
+group.querySelectorAll(".option").forEach(o=>o.classList.remove("active"));
+element.classList.add("active");
+
+let value = element.innerText.split(" ")[1];
+document.getElementById(type).value=value;
+
+let rain=document.getElementById("rainEffect");
+let fog=document.getElementById("fogEffect");
+
+rain.style.display="none";
+fog.style.display="none";
+clearInterval(thunderInterval);
+
+if(type==="weather"){
+if(value==="Rain"){
+startRain();
+rain.style.display="block";
+startStorm();
+}
+else if(value==="Fog"){
+fog.style.display="block";
+}
+}
+
+}
+
+/* Rain Generator */
+function startRain(){
+let rainContainer=document.getElementById("rainEffect");
+rainContainer.innerHTML="";
+for(let i=0;i<150;i++){
+let drop=document.createElement("div");
+drop.classList.add("raindrop");
+drop.style.left=Math.random()*100+"vw";
+drop.style.animationDuration=(0.5+Math.random())+"s";
+drop.style.opacity=Math.random();
+rainContainer.appendChild(drop);
+}
+}
+
+/* Lightning + Thunder */
+function startStorm(){
+thunderInterval=setInterval(()=>{
+let lightning=document.getElementById("lightning");
+let thunder=document.getElementById("thunderSound");
+
+lightning.classList.add("flash");
+setTimeout(()=>lightning.classList.remove("flash"),300);
+
+thunder.play();
+},5000);
+}
+
+/* Predict */
+function predict(){
+
+let weather=document.getElementById("weather").value;
+let roadType=document.getElementById("roadType").value;
+let speed=document.getElementById("speed").value;
+let time=document.getElementById("time").value;
+
+let headlight=document.getElementById("headlight");
+
+if(time==="Night"){
+headlight.style.display="block";
+}
+else{
+headlight.style.display="none";
+}
+
+fetch("/api/predict",{
+method:"POST",
+headers:{"Content-Type":"application/x-www-form-urlencoded"},
+body:`weather=${weather}&roadType=${roadType}&speed=${speed}&time=${time}`
+})
+.then(res=>res.text())
+.then(data=>{
+
+let score=parseInt(data);
+document.getElementById("result").innerHTML="Risk Score: "+score;
+
+document.querySelectorAll(".light").forEach(l=>l.classList.remove("active"));
+
+if(score>=30 && score<70){
+document.querySelector(".green").classList.add("active");
+}
+else if(score>=70 && score<80){
+document.querySelector(".yellow").classList.add("active");
+}
+else if(score>=80){
+document.querySelector(".red").classList.add("active");
+setTimeout(()=>window.location.href="danger.html",1500);
+}
+
+});
+
+}
+
+</script>
+
+</body>
+</html>

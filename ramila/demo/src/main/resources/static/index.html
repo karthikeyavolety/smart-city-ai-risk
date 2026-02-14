@@ -1,0 +1,327 @@
+]<!DOCTYPE html>
+<html>
+<head>
+    <title>🚦 Road Accident Risk Predictor</title>
+
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: black;
+            overflow: hidden;
+            color: white;
+            text-align: center;
+        }
+
+        /* 🌃 NIGHT SKY */
+        .stars {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            z-index: -5;
+            background: black;
+        }
+
+        .stars::after {
+            content: "";
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            background: white;
+            box-shadow:
+                100px 200px white,
+                300px 100px white,
+                500px 250px white,
+                700px 150px white,
+                900px 300px white,
+                1100px 180px white,
+                1300px 220px white,
+                200px 400px white,
+                800px 500px white;
+            animation: twinkle 2s infinite alternate;
+        }
+
+        @keyframes twinkle {
+            from { opacity: 0.3; }
+            to { opacity: 1; }
+        }
+
+        /* 🌧 RAIN */
+        .rain {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            z-index: -4;
+            pointer-events: none;
+            display: none;
+        }
+
+        .drop {
+            position: absolute;
+            width: 2px;
+            height: 20px;
+            background: rgba(173,216,230,0.7);
+            animation: fall 0.6s linear infinite;
+        }
+
+        @keyframes fall {
+            from { transform: translateY(-100px); }
+            to { transform: translateY(100vh); }
+        }
+
+        /* ⚡ Thunder Flash */
+        .flash {
+            animation: flashEffect 0.3s ease-in-out;
+        }
+
+        @keyframes flashEffect {
+            0% { background: white; }
+            100% { background: black; }
+        }
+
+        /* 🛣 3D ROAD */
+        .road {
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            height: 100%;
+            perspective: 400px;
+            z-index: -3;
+        }
+
+        .road-strip {
+            position: absolute;
+            bottom: -200px;
+            width: 12px;
+            height: 200%;
+            background: repeating-linear-gradient(
+                to bottom,
+                white 0px,
+                white 25px,
+                transparent 25px,
+                transparent 50px
+            );
+            left: 50%;
+            transform: translateX(-50%) rotateX(60deg);
+            animation: moveRoad 1.5s linear infinite;
+        }
+
+        @keyframes moveRoad {
+            0% { background-position: 0 0; }
+            100% { background-position: 0 100px; }
+        }
+
+        /* 🚗 CAR */
+        .car {
+            position: fixed;
+            bottom: 80px;
+            left: 50%;
+            font-size: 60px;
+            transform: translateX(-50%);
+            animation-name: carDrive;
+            animation-duration: 1.5s;
+            animation-timing-function: ease-in-out;
+            animation-iteration-count: infinite;
+            z-index: -1;
+        }
+
+        @keyframes carDrive {
+            0% { transform: translateX(-50%) translateY(0) rotate(0deg); }
+            25% { transform: translateX(-50%) translateY(-5px) rotate(-2deg); }
+            50% { transform: translateX(-50%) translateY(0) rotate(0deg); }
+            75% { transform: translateX(-50%) translateY(-5px) rotate(2deg); }
+            100% { transform: translateX(-50%) translateY(0) rotate(0deg); }
+        }
+
+        /* CONTENT */
+        .container { margin-top: 40px; }
+
+        .box {
+            background: rgba(30,30,30,0.95);
+            padding: 30px;
+            width: 420px;
+            margin: auto;
+            border-radius: 15px;
+            box-shadow: 0 0 30px rgba(0,0,0,0.9);
+        }
+
+        select, input {
+            padding: 10px;
+            width: 95%;
+            margin: 8px 0;
+            border-radius: 5px;
+            border: none;
+        }
+
+        button {
+            padding: 12px;
+            width: 100%;
+            border-radius: 8px;
+            border: none;
+            font-size: 16px;
+            cursor: pointer;
+            margin-top: 10px;
+            background-color: #2ecc71;
+            color: white;
+            font-weight: bold;
+        }
+
+        /* 🚦 TRAFFIC LIGHT */
+        .traffic-light {
+            margin: 20px auto;
+            width: 60px;
+            padding: 15px;
+            background: #000;
+            border-radius: 20px;
+        }
+
+        .light {
+            width: 40px;
+            height: 40px;
+            margin: 10px auto;
+            border-radius: 50%;
+            background: #333;
+        }
+
+        .red-active { background: #e74c3c; box-shadow: 0 0 25px #e74c3c; }
+        .yellow-active { background: #f1c40f; box-shadow: 0 0 25px #f1c40f; }
+        .green-active { background: #2ecc71; box-shadow: 0 0 25px #2ecc71; }
+
+        .risk-low { color: #2ecc71; }
+        .risk-medium { color: #f1c40f; }
+        .risk-high { color: #e74c3c; }
+
+    </style>
+</head>
+
+<body>
+
+<div class="stars"></div>
+<div class="rain" id="rain"></div>
+<div class="road"><div class="road-strip"></div></div>
+<div class="car">🚗</div>
+
+<div class="container">
+    <h2>🚦 Road Accident Risk Predictor</h2>
+
+    <div class="traffic-light">
+        <div id="redLight" class="light"></div>
+        <div id="yellowLight" class="light"></div>
+        <div id="greenLight" class="light"></div>
+    </div>
+
+    <div class="box">
+        <select id="weather">
+            <option>Clear</option>
+            <option>Rain</option>
+            <option>Fog</option>
+            <option>Snow</option>
+        </select>
+
+        <select id="roadType">
+            <option>Highway</option>
+            <option>City</option>
+            <option>Rural</option>
+        </select>
+
+        <input type="number" id="speed" placeholder="Speed (km/h)" />
+
+        <select id="time">
+            <option>Day</option>
+            <option>Night</option>
+        </select>
+
+        <button onclick="predict()">Predict Risk</button>
+
+        <h3 id="result"></h3>
+        <p id="tips"></p>
+    </div>
+</div>
+
+<script>
+function createRain() {
+    const rain = document.getElementById("rain");
+    rain.innerHTML = "";
+    for (let i = 0; i < 100; i++) {
+        const drop = document.createElement("div");
+        drop.classList.add("drop");
+        drop.style.left = Math.random() * 100 + "vw";
+        drop.style.animationDuration = (Math.random() * 0.5 + 0.3) + "s";
+        rain.appendChild(drop);
+    }
+}
+
+function thunderFlash() {
+    document.body.classList.add("flash");
+    setTimeout(() => {
+        document.body.classList.remove("flash");
+    }, 200);
+}
+
+function resetLights() {
+    document.getElementById("redLight").className = "light";
+    document.getElementById("yellowLight").className = "light";
+    document.getElementById("greenLight").className = "light";
+}
+
+function predict() {
+
+    const weather = document.getElementById("weather").value;
+
+    const data = {
+        weather: weather,
+        roadType: document.getElementById("roadType").value,
+        speed: document.getElementById("speed").value,
+        time: document.getElementById("time").value
+    };
+
+    fetch("/predict", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data)
+    })
+    .then(res => res.json())
+    .then(data => {
+
+        let result = document.getElementById("result");
+        let car = document.querySelector(".car");
+        let rain = document.getElementById("rain");
+
+        result.innerText =
+            "Risk Level: " + data.riskLevel +
+            " (Score: " + data.score + ")";
+
+        resetLights();
+
+        if (weather === "Rain") {
+            rain.style.display = "block";
+            createRain();
+        } else {
+            rain.style.display = "none";
+        }
+
+        if (data.score <= 40) {
+            result.className = "risk-low";
+            document.getElementById("greenLight").classList.add("green-active");
+            car.style.animationDuration = "1.5s";
+        }
+        else if (data.score <= 60) {
+            result.className = "risk-medium";
+            document.getElementById("yellowLight").classList.add("yellow-active");
+            car.style.animationDuration = "1s";
+        }
+        else {
+            result.className = "risk-high";
+            document.getElementById("redLight").classList.add("red-active");
+            car.style.animationDuration = "0.4s";
+            thunderFlash();
+        }
+
+        document.getElementById("tips").innerText =
+            "Safety Tips: " + data.tips.join(", ");
+    });
+}
+</script>
+
+</body>
+</html>

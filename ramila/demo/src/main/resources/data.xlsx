@@ -1,0 +1,7 @@
+| Person | Speed | Weather |
+| ------ | ----- | ------- |
+| A      | 45    | Clear   |
+| B      | 80    | Rain    |
+| C      | 100   | Fog     |
+| D      | 60    | Clear   |
+| E      | 120   | Rain    |

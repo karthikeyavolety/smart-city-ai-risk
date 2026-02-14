@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Danger Alert</title>
+
+<style>
+body{
+margin:0;
+font-family:Arial;
+background:red;
+color:white;
+display:flex;
+flex-direction:column;
+justify-content:center;
+align-items:center;
+height:100vh;
+animation:flash 0.6s infinite;
+}
+
+@keyframes flash{
+0%{background:red;}
+50%{background:darkred;}
+100%{background:red;}
+}
+
+button{
+margin-top:30px;
+padding:15px 30px;
+border:none;
+border-radius:20px;
+background:white;
+color:red;
+font-weight:bold;
+cursor:pointer;
+}
+</style>
+</head>
+
+<body>
+
+<h1>DANGER ZONE</h1>
+<h2>High Risk Detected! Stop Immediately!</h2>
+
+<button onclick="window.location.href='index.html'">
+Back to Dashboard
+</button>
+
+</body>
+</html>

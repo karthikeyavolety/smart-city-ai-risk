@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Accident Analysis Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        body {
+            background: linear-gradient(to bottom, #0f2027, #203a43, #2c5364);
+            color: white;
+            text-align: center;
+            font-family: Arial, sans-serif;
+            margin: 0;
+        }
+
+        h2 {
+            margin-top: 40px;
+            font-size: 28px;
+        }
+
+        .upload-box {
+            margin-top: 30px;
+        }
+
+        input {
+            margin-top: 15px;
+            padding: 8px;
+        }
+
+        button {
+            margin-top: 15px;
+            padding: 12px 25px;
+            background: #3498db;
+            border: none;
+            color: white;
+            cursor: pointer;
+            border-radius: 6px;
+            font-size: 16px;
+        }
+
+        button:hover {
+            background: #2980b9;
+        }
+
+        .stats {
+            margin-top: 20px;
+            font-size: 18px;
+        }
+
+        canvas {
+            margin-top: 40px;
+            max-width: 700px;
+        }
+    </style>
+</head>
+
+<body>
+
+<h2>Upload for Real-Time Risk Analysis</h2>
+
+<div class="upload-box">
+    <input type="file" id="fileInput" accept=".xlsx"/>
+    <br>
+    <button onclick="uploadFile()">Upload & Analyze</button>
+</div>
+
+<div class="stats" id="totalRecords"></div>
+
+<canvas id="riskChart"></canvas>
+
+<script>
+
+let chartInstance = null;
+
+function uploadFile() {
+
+    const file = document.getElementById("fileInput").files[0];
+
+    if (!file) {
+        alert("Please select an Excel file.");
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    fetch("/upload-analysis", {
+        method: "POST",
+        body: formData
+    })
+    .then(res => res.json())
+    .then(data => {
+
+        const total = data.Green + data.Yellow + data.Red;
+        document.getElementById("totalRecords").innerText =
+            "Total Records Analyzed: " + total;
+
+        const ctx = document.getElementById("riskChart");
+
+        if (chartInstance != null)
+            chartInstance.destroy();
+
+        chartInstance = new Chart(ctx, {
+            type: "bar",
+            data: {
+                labels: [
+                    "Green (Safe)",
+                    "Yellow (Moderate)",
+                    "Red (High)"
+                ],
+                datasets: [{
+                    label: "Number of People",
+                    data: [
+                        data.Green,
+                        data.Yellow,
+                        data.Red
+                    ],
+                    backgroundColor: [
+                        "#2ecc71",
+                        "#f1c40f",
+                        "#e74c3c"
+                    ]
+                }]
+            },
+            options: {
+                plugins: {
+                    legend: {
+                        labels: { color: "white" }
+                    }
+                },
+                scales: {
+                    x: {
+                        ticks: { color: "white" }
+                    },
+                    y: {
+                        ticks: { color: "white" }
+                    }
+                }
+            }
+        });
+    });
+}
+</script>
+
+</body>
+</html>
